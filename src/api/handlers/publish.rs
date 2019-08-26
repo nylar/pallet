@@ -116,7 +116,7 @@ pub fn publish(
     let metadata = Metadata {
         name: crate_upload.name,
         vers: crate_upload.vers,
-        deps: deps,
+        deps,
         cksum: format!("{:x}", hash),
         features: crate_upload.features,
         yanked: false,

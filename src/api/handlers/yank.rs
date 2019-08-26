@@ -30,11 +30,11 @@ fn do_yank(
 
     let krate = krate::Krate::by_name(&conn, crate_id)
         .map_err(custom)?
-        .ok_or_else(|| not_found())?;
+        .ok_or_else(not_found)?;
 
     let version = version::Version::by_crate_id_and_version(&conn, krate.id, &vers.to_string())
         .map_err(custom)?
-        .ok_or_else(|| not_found())?;
+        .ok_or_else(not_found)?;
 
     crate::yank_crate(&app, crate_id, vers, yanked).map_err(custom)?;
 

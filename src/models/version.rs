@@ -36,7 +36,7 @@ impl Version {
     pub fn set_yanked(&self, conn: &PgConnection, yanked: bool) -> Result<(), Error> {
         let yanked_version = YankedVersion {
             id: self.id,
-            yanked: yanked,
+            yanked,
         };
 
         yanked_version

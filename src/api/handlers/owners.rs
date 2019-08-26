@@ -29,7 +29,7 @@ pub fn list(crate_id: String, app: Application) -> Result<impl warp::Reply, warp
 
     let krate = Krate::by_name(&conn, &crate_id)
         .map_err(custom)?
-        .ok_or_else(|| not_found())?;
+        .ok_or_else(not_found)?;
 
     let owners = krate.owners(&conn).map_err(custom)?;
 
@@ -45,7 +45,7 @@ pub fn add(
 
     let krate = Krate::by_name(&conn, &crate_id)
         .map_err(custom)?
-        .ok_or_else(|| not_found())?;
+        .ok_or_else(not_found)?;
 
     // TODO: Make this one query
     let ids = modify_user
@@ -79,7 +79,7 @@ pub fn remove(
 
     let krate = Krate::by_name(&conn, &crate_id)
         .map_err(custom)?
-        .ok_or_else(|| not_found())?;
+        .ok_or_else(not_found)?;
 
     // TODO: Make this one query
     let ids = modify_user

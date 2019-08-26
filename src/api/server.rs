@@ -6,6 +6,8 @@ use crate::Application;
 use semver::Version;
 use warp::{path, Filter};
 
+const MAX_UPLOAD_SIZE: u64 = 10_485_760; // TODO: Make configureable
+
 pub fn server(addr: impl Into<SocketAddr> + 'static, application: Application) {
     let app = warp::any().map(move || application.clone());
 
@@ -36,7 +38,7 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Application) {
     // Publish `PUT /api/v1/crates/new`
     let crates_new = warp::put2()
         .and(authorization_header)
-        .and(warp::body::content_length_limit(10485760))
+        .and(warp::body::content_length_limit(MAX_UPLOAD_SIZE))
         .and(warp::body::concat())
         .and(publish_endpoint)
         .and(app.clone())

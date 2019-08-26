@@ -179,7 +179,7 @@ where
     // we try to give a more helpful error message about precisely what we
     // tried.
     let mut msg = "failed to authenticate when downloading repository".to_string();
-    if ssh_agent_attempts.len() > 0 {
+    if ssh_agent_attempts.is_empty() {
         let names = ssh_agent_attempts
             .iter()
             .map(|s| format!("`{}`", s))
