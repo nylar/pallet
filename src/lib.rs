@@ -25,6 +25,7 @@ use crate::storage::{Local, Storage};
 
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool};
+use semver::Version;
 
 #[derive(Clone)]
 pub struct Application {
@@ -76,6 +77,47 @@ pub fn add_crate(app: &Application, metadata: &Metadata) -> Result<(), Error> {
     repo.commit_and_push(
         &format!("Updating crate `{}#{}`", metadata.name, metadata.vers),
         &repo.relative_index_file(&metadata.name),
+    )?;
+
+    Ok(())
+}
+
+pub fn yank_crate(
+    app: &Application,
+    name: &str,
+    version: &Version,
+    yanked: bool,
+) -> Result<(), Error> {
+    use std::fs;
+
+    let repo = app.lock_index()?;
+
+    let dst = repo.index_file(&name);
+
+    // TODO: This will be inefficient for large files
+    let prev = fs::read_to_string(&dst)?;
+    let new = prev
+        .lines()
+        .map(|line| {
+            let mut git_crate = serde_json::from_str::<Metadata>(line)?;
+            if git_crate.name != name || git_crate.vers != *version {
+                return Ok(line.to_string());
+            }
+            git_crate.yanked = yanked;
+            Ok(serde_json::to_string(&git_crate)?)
+        })
+        .collect::<Result<Vec<_>, Error>>();
+    let new = new?.join("\n") + "\n";
+    fs::write(&dst, new.as_bytes())?;
+
+    repo.commit_and_push(
+        &format!(
+            "{} crate `{}#{}`",
+            if yanked { "Yanking" } else { "Unyanking" },
+            name,
+            version
+        ),
+        &repo.relative_index_file(name),
     )?;
 
     Ok(())
