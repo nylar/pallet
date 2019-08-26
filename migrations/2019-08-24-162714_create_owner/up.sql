@@ -1,0 +1,5 @@
+CREATE TABLE owner (
+  id SERIAL PRIMARY KEY,
+  login TEXT NOT NULL UNIQUE,
+  name TEXT
+)
