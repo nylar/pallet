@@ -45,10 +45,4 @@ joinable!(krateowner -> owner (owner_id));
 joinable!(token -> owner (owner_id));
 joinable!(version -> krate (krate_id));
 
-allow_tables_to_appear_in_same_query!(
-    krate,
-    krateowner,
-    owner,
-    token,
-    version,
-);
+allow_tables_to_appear_in_same_query!(krate, krateowner, owner, token, version,);

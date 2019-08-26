@@ -1,53 +1,18 @@
 language: rust
 sudo: false
 
-DEPLOY_TO_GITHUB: &DEPLOY_TO_GITHUB
-  before_deploy:
-    - name="pallet-$TRAVIS_TAG-$TARGET"
-    - mkdir $name
-    - cp target/$TARGET/release/pallet $name/
-    - cp README.md LICENSE-MIT LICENSE-APACHE $name/
-    - tar czvf $name.tar.gz $name
-  deploy:
-    provider: releases
-    api_key: $GH_TOKEN
-    file: pallet-$TRAVIS_TAG-$TARGET.tar.gz
-    skip_cleanup: true
-    on:
-      branch: master
-      tags: true
-
 matrix:
   include:
 
-  # tests pass
   - rust: stable
     script:
-    - cargo build --verbose --all
-    - cargo test --verbose --all
+    - cargo build --all
+    - cargo test --all
     - rustup component add clippy
     - cargo clippy
     - rustup component add rustfmt
     - cargo fmt --all -- --check
     env: RUST_BACKTRACE=1
-
-  # dist linux binary
-  - env: JOB=dist-linux TARGET=x86_64-unknown-linux-musl
-    rust: stable
-    before_script: rustup target add $TARGET
-    script: cargo build --release --target $TARGET
-    addons:
-      apt:
-        packages:
-          - musl-tools
-    <<: *DEPLOY_TO_GITHUB
-
-  # dist OSX binary
-  - env: JOB=dist-osx MACOSX_DEPLOYMENT_TARGET=10.7 TARGET=x86_64-apple-darwin
-    os: osx
-    rust: stable
-    script: cargo build --release --target $TARGET
-    <<: *DEPLOY_TO_GITHUB
 
 notifications:
   email:
