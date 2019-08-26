@@ -1,19 +1,3 @@
-// // use crate::db::DB;
-// use std::sync::Arc;
-
-// use crate::db::owner_by_token;
-// use crate::models::Owner;
-
-// use diesel::pg::PgConnection;
-// use warp::{filters::BoxedFilter, Filter, Rejection, Reply};
-
-// pub fn access_token(
-//     token: String,
-//     conn: &PgConnection,
-// ) -> impl Filter<Extract = (Owner,), Error = Rejection> + Clone {
-//     warp::any().and(move || Arc::new(owner_by_token(conn, &token)))
-// }
-
 use crate::error::Error;
 
 use serde::Serialize;
