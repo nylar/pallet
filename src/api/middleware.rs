@@ -25,8 +25,8 @@ pub(crate) fn auth(app: Arc<Application>) -> BoxedFilter<(Owner,)> {
 
             match token.owner(&conn) {
                 Ok(Some(owner)) => Ok(owner),
-                Ok(None) => return Err(custom(Error::Unauthorized)),
-                Err(err) => return Err(custom(err)),
+                Ok(None) => Err(custom(Error::Unauthorized)),
+                Err(err) => Err(custom(err)),
             }
         })
         .boxed()
