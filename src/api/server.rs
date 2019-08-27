@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 use super::{handlers, middleware};
 use crate::Application;
@@ -8,10 +9,16 @@ use warp::{path, Filter};
 
 const MAX_UPLOAD_SIZE: u64 = 10_485_760; // TODO: Make configureable
 
-pub fn server(addr: impl Into<SocketAddr> + 'static, application: Application) {
-    let app = warp::any().map(move || application.clone());
+pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Application>) {
+    let files_path = application.storage.local_base_path();
 
-    let authorization_header = warp::header("Authorization");
+    // Only enabled when the storage type is Local
+    let local_files = serve_static(files_path.is_some())
+        .and(warp::path("crates"))
+        .and(warp::fs::dir(files_path.unwrap()));
+
+    let app = application.clone();
+    let app = warp::any().map(move || app.clone());
 
     let me_endpoint = path!("me");
 
@@ -37,7 +44,7 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Application) {
 
     // Publish `PUT /api/v1/crates/new`
     let crates_new = warp::put2()
-        .and(authorization_header)
+        .and(middleware::auth(application.clone()))
         .and(warp::body::content_length_limit(MAX_UPLOAD_SIZE))
         .and(warp::body::concat())
         .and(publish_endpoint)
@@ -52,24 +59,28 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Application) {
 
     // Yank `DELETE /api/v1/crates/:crate_id/:version/yank`
     let crates_yank = warp::delete2()
+        .and(middleware::auth(application.clone()))
         .and(yank_endpoint)
         .and(app.clone())
         .and_then(handlers::yank::yank);
 
     // Unyank `PUT /api/v1/crates/:crate_id/:version/unyank`
     let crates_unyank = warp::put2()
+        .and(middleware::auth(application.clone()))
         .and(unyank_endpoint)
         .and(app.clone())
         .and_then(handlers::yank::unyank);
 
     // Owners List `GET /api/v1/crates/:crate_id/owners`
     let owners_list = warp::get2()
+        .and(middleware::auth(application.clone()))
         .and(owners_endpoint)
         .and(app.clone())
         .and_then(handlers::owners::list);
 
     // Owners Add `PUT /api/v1/crates/{crate_name}/owners`
     let owners_add = warp::put2()
+        .and(middleware::auth(application.clone()))
         .and(owners_endpoint)
         .and(modify_owners)
         .and(app.clone())
@@ -77,6 +88,7 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Application) {
 
     // Owners Remove `DELETE /api/v1/crates/{crate_name}/owners`
     let owners_remove = warp::delete2()
+        .and(middleware::auth(application.clone()))
         .and(owners_endpoint)
         .and(modify_owners)
         .and(app.clone())
@@ -100,7 +112,22 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Application) {
         .or(owners_remove)
         .or(search)
         .or(me)
+        .or(local_files)
         .recover(middleware::error_handler);
 
     warp::serve(api).run(addr);
+}
+
+fn serve_static(
+    is_local_storage: bool,
+) -> impl warp::Filter<Extract = (), Error = warp::Rejection> + Copy {
+    warp::any()
+        .and_then(move || {
+            if is_local_storage {
+                Ok(())
+            } else {
+                Err(warp::reject::not_found())
+            }
+        })
+        .untuple_one()
 }

@@ -1,26 +1,31 @@
-use crate::models::{krate, version};
+use std::sync::Arc;
+
+use crate::models::{krate, owner::Owner, version};
 use crate::Application;
 
 use semver::Version;
 use warp::reject::{custom, not_found};
 
 pub fn yank(
+    owner: Owner,
     crate_id: String,
     version: Version,
-    app: Application,
+    app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    do_yank(&crate_id, &version, &app, true)
+    do_yank(&owner, &crate_id, &version, &app, true)
 }
 
 pub fn unyank(
+    owner: Owner,
     crate_id: String,
     version: Version,
-    app: Application,
+    app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    do_yank(&crate_id, &version, &app, false)
+    do_yank(&owner, &crate_id, &version, &app, false)
 }
 
 fn do_yank(
+    owner: &Owner,
     crate_id: &str,
     vers: &Version,
     app: &Application,
@@ -31,6 +36,8 @@ fn do_yank(
     let krate = krate::Krate::by_name(&conn, crate_id)
         .map_err(custom)?
         .ok_or_else(not_found)?;
+
+    super::has_crate_permission(&conn, krate.id, owner.id)?;
 
     let version = version::Version::by_crate_id_and_version(&conn, krate.id, &vers.to_string())
         .map_err(custom)?

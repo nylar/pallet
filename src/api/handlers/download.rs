@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::sync::Arc;
 
 use crate::Application;
 
@@ -9,7 +10,7 @@ use warp::reject::custom;
 pub fn download(
     crate_id: String,
     version: Version,
-    app: Application,
+    app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let redirect_url: String = app
         .storage

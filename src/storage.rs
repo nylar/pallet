@@ -30,6 +30,12 @@ impl Storage {
             Storage::Local(ref local) => local.get(&crate_path),
         }
     }
+
+    pub fn local_base_path(&self) -> Option<PathBuf> {
+        match *self {
+            Storage::Local(ref local) => Some(local.base_path.clone()),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -42,10 +48,6 @@ impl Local {
         Local {
             base_path: base_path.to_path_buf(),
         }
-    }
-
-    pub fn base_path(&self) -> &Path {
-        self.base_path.as_path()
     }
 
     fn put(&self, crate_path: &str, content: &[u8]) -> Result<(), Error> {
@@ -61,6 +63,6 @@ impl Local {
     }
 
     fn get(&self, crate_path: &str) -> Result<String, Error> {
-        Ok(format!("/files/{}", crate_path))
+        Ok(format!("/crates/{}", crate_path))
     }
 }

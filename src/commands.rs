@@ -123,6 +123,7 @@ pub struct Server {
 impl Command for Server {
     fn run(&self) -> Result<(), Error> {
         use std::net::SocketAddr;
+        use std::sync::Arc;
 
         let app = crate::Application::new(&self)?;
 
@@ -130,7 +131,7 @@ impl Command for Server {
             .parse::<SocketAddr>()
             .unwrap();
 
-        crate::api::server(addr, app);
+        crate::api::server(addr, Arc::new(app));
 
         Ok(())
     }

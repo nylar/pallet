@@ -15,6 +15,23 @@ pub struct KrateOwner {
 }
 
 impl KrateOwner {
+    pub fn crate_permission(
+        conn: &PgConnection,
+        krate_id: i32,
+        owner_id: i32,
+    ) -> Result<bool, Error> {
+        let result = krateowner::table
+            .filter(krateowner::krate_id.eq(krate_id))
+            .filter(krateowner::owner_id.eq(owner_id))
+            .first::<KrateOwner>(conn);
+
+        match result {
+            Ok(_) => Ok(true),
+            Err(diesel::result::Error::NotFound) => Ok(false),
+            Err(err) => Err(Error::DB(err)),
+        }
+    }
+
     pub fn remove_owner(conn: &PgConnection, krate_id: i32, owner_id: i32) -> Result<(), Error> {
         diesel::delete(
             krateowner::table

@@ -1,11 +1,11 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
-use crate::error::Error;
 use crate::metadata::{Dependency, Kind, Metadata};
 use crate::models::{
     krate::{Krate, NewKrate},
     krateowner::NewKrateOwner,
-    token::Token,
+    owner::Owner,
     version::NewVersion,
 };
 use crate::Application;
@@ -66,21 +66,11 @@ impl SuccessfulResponse {
 
 // TODO: I shouldn't block the request
 pub fn publish(
-    token: String,
+    owner: Owner,
     mut body: warp::body::FullBody,
-    app: Application,
+    app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let conn = app.pool.get().unwrap();
-
-    // TODO: Make me a middleware?
-    let token = Token::by_token(&conn, &token)
-        .map_err(custom)?
-        .ok_or_else(|| custom(Error::Unauthorized))?;
-
-    let owner = token
-        .owner(&conn)
-        .map_err(custom)?
-        .ok_or_else(|| custom(Error::Unauthorized))?;
 
     // TODO: Replace the body handling with a Filter?
     let metadata_length = body.get_u32_le();
@@ -124,7 +114,11 @@ pub fn publish(
     };
 
     let krate = match Krate::by_name(&conn, &metadata.name).map_err(custom)? {
-        Some(k) => k,
+        Some(k) => {
+            // Check we have permission to perform acctions on this crate.
+            super::has_crate_permission(&conn, k.id, owner.id)?;
+            k
+        }
         None => {
             let new_krate = NewKrate {
                 name: &metadata.name,

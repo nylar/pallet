@@ -1,12 +1,47 @@
+use std::sync::Arc;
+
 use crate::error::Error;
+use crate::models::{owner::Owner, token::Token};
+use crate::Application;
 
 use serde::Serialize;
 use warp::http::StatusCode;
-use warp::{Rejection, Reply};
+use warp::{filters::BoxedFilter, reject::custom, Filter, Rejection, Reply};
 
-pub fn error_handler(err: Rejection) -> Result<impl Reply, Rejection> {
+pub(crate) fn auth(app: Arc<Application>) -> BoxedFilter<(Owner,)> {
+    let app = warp::any().map(move || app.clone());
+
+    warp::any()
+        .and(app)
+        .and(warp::header::<String>("authorization"))
+        .and_then(|app: Arc<Application>, token: String| {
+            let conn = app.pool.get().unwrap();
+
+            let token = match Token::by_token(&conn, &token) {
+                Ok(Some(token)) => token,
+                Ok(None) => return Err(custom(Error::Unauthorized)),
+                Err(err) => return Err(custom(err)),
+            };
+
+            match token.owner(&conn) {
+                Ok(Some(owner)) => Ok(owner),
+                Ok(None) => return Err(custom(Error::Unauthorized)),
+                Err(err) => return Err(custom(err)),
+            }
+        })
+        .boxed()
+}
+
+pub(crate) fn error_handler(err: Rejection) -> Result<impl Reply, Rejection> {
     if let Some(ref err) = err.find_cause::<Error>() {
-        Ok(warp::reply::with_status(error(*err), StatusCode::OK))
+        match err {
+            // Unauthorized errors should return a 403
+            Error::Unauthorized => Ok(warp::reply::with_status(
+                error(*err),
+                StatusCode::UNAUTHORIZED,
+            )),
+            _ => Ok(warp::reply::with_status(error(*err), StatusCode::OK)),
+        }
     } else {
         Err(err)
     }

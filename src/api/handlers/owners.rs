@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::models::{
     krate::Krate,
     krateowner::{KrateOwner, NewKrateOwner},
@@ -24,12 +26,18 @@ pub struct ModifyOwner {
     users: Vec<String>,
 }
 
-pub fn list(crate_id: String, app: Application) -> Result<impl warp::Reply, warp::Rejection> {
+pub fn list(
+    owner: Owner,
+    crate_id: String,
+    app: Arc<Application>,
+) -> Result<impl warp::Reply, warp::Rejection> {
     let conn = app.pool.get().unwrap();
 
     let krate = Krate::by_name(&conn, &crate_id)
         .map_err(custom)?
         .ok_or_else(not_found)?;
+
+    super::has_crate_permission(&conn, krate.id, owner.id)?;
 
     let owners = krate.owners(&conn).map_err(custom)?;
 
@@ -37,15 +45,18 @@ pub fn list(crate_id: String, app: Application) -> Result<impl warp::Reply, warp
 }
 
 pub fn add(
+    owner: Owner,
     crate_id: String,
     modify_user: ModifyOwner,
-    app: Application,
+    app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let conn = app.pool.get().unwrap();
 
     let krate = Krate::by_name(&conn, &crate_id)
         .map_err(custom)?
         .ok_or_else(not_found)?;
+
+    super::has_crate_permission(&conn, krate.id, owner.id)?;
 
     // TODO: Make this one query
     let ids = modify_user
@@ -71,15 +82,18 @@ pub fn add(
 }
 
 pub fn remove(
+    owner: Owner,
     crate_id: String,
     modify_user: ModifyOwner,
-    app: Application,
+    app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let conn = app.pool.get().unwrap();
 
     let krate = Krate::by_name(&conn, &crate_id)
         .map_err(custom)?
         .ok_or_else(not_found)?;
+
+    super::has_crate_permission(&conn, krate.id, owner.id)?;
 
     // TODO: Make this one query
     let ids = modify_user
