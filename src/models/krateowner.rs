@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::models::{krate::Krate, owner::Owner};
 use crate::schema::krateowner;
 
+use diesel::pg::expression::dsl::any;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 
@@ -32,11 +33,15 @@ impl KrateOwner {
         }
     }
 
-    pub fn remove_owner(conn: &PgConnection, krate_id: i32, owner_id: i32) -> Result<(), Error> {
+    pub fn remove_owners(
+        conn: &PgConnection,
+        krate_id: i32,
+        owners: Vec<i32>,
+    ) -> Result<(), Error> {
         diesel::delete(
             krateowner::table
                 .filter(krateowner::krate_id.eq(krate_id))
-                .filter(krateowner::owner_id.eq(owner_id)),
+                .filter(krateowner::owner_id.eq(any(owners))),
         )
         .execute(conn)?;
 
@@ -57,5 +62,12 @@ impl NewKrateOwner {
             .values(self)
             .get_result(conn)
             .map_err(Error::DB)
+    }
+
+    pub fn save_many(conn: &PgConnection, owners: Vec<NewKrateOwner>) -> Result<(), Error> {
+        diesel::insert_into(krateowner::table)
+            .values(&owners)
+            .execute(conn)?;
+        Ok(())
     }
 }

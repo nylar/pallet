@@ -7,9 +7,9 @@ use crate::Application;
 use semver::Version;
 use warp::{path, Filter};
 
-const MAX_UPLOAD_SIZE: u64 = 10_485_760; // TODO: Make configureable
-
 pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Application>) {
+    let max_upload_size = application.max_upload_size;
+
     let files_path = application.storage.local_base_path();
 
     // Only enabled when the storage type is Local
@@ -45,7 +45,7 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
     // Publish `PUT /api/v1/crates/new`
     let crates_new = warp::put2()
         .and(middleware::auth(application.clone()))
-        .and(warp::body::content_length_limit(MAX_UPLOAD_SIZE))
+        .and(warp::body::content_length_limit(max_upload_size))
         .and(warp::body::concat())
         .and(publish_endpoint)
         .and(app.clone())

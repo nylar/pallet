@@ -9,6 +9,7 @@ pub enum Error {
     Git(git2::Error),
     InvalidRef(String),
     Unauthorized,
+    MissingOwners,
 }
 
 impl fmt::Display for Error {
@@ -21,6 +22,7 @@ impl fmt::Display for Error {
             Error::Git(ref err) => err.fmt(f),
             Error::InvalidRef(ref status) => write!(f, "failed to push a ref: {}", status),
             Error::Unauthorized => write!(f, "Unauthorized"),
+            Error::MissingOwners => write!(f, "No owners provided"),
         }
     }
 }

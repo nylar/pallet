@@ -118,6 +118,13 @@ pub struct Server {
     /// Index location.
     #[structopt(long = "index-location", env = "INDEX_LOCATION")]
     pub index_location: String,
+    /// Max upload size in bytes.
+    #[structopt(
+        long = "max-upload-size",
+        env = "MAX_UPLOAD_SIZE",
+        default_value = "10_485_760"
+    )]
+    pub max_upload_size: u64,
 }
 
 impl Command for Server {

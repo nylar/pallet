@@ -32,6 +32,7 @@ pub struct Application {
     pub pool: Pool<ConnectionManager<PgConnection>>,
     pub storage: Storage,
     index: Arc<Mutex<Repository>>,
+    pub max_upload_size: u64,
 }
 
 impl Application {
@@ -46,6 +47,7 @@ impl Application {
             pool,
             storage,
             index,
+            max_upload_size: server.max_upload_size,
         })
     }
 
@@ -94,7 +96,6 @@ pub fn yank_crate(
 
     let dst = repo.index_file(&name);
 
-    // TODO: This will be inefficient for large files
     let prev = fs::read_to_string(&dst)?;
     let new = prev
         .lines()

@@ -3,6 +3,7 @@ use std::fmt;
 use crate::error::Error;
 use crate::schema::owner;
 
+use diesel::pg::expression::dsl::any;
 use diesel::prelude::*;
 use serde::Serialize;
 
@@ -26,6 +27,14 @@ impl Owner {
         owner::table
             .filter(owner::id.eq(id))
             .first::<Owner>(conn)
+            .map_err(Error::DB)
+    }
+
+    pub fn ids_by_logins(conn: &PgConnection, logins: Vec<String>) -> Result<Vec<i32>, Error> {
+        owner::table
+            .select(owner::id)
+            .filter(owner::login.eq(any(logins)))
+            .load(conn)
             .map_err(Error::DB)
     }
 }

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::error::Error;
 use crate::models::{
     krate::Krate,
     krateowner::{KrateOwner, NewKrateOwner},
@@ -50,6 +51,10 @@ pub fn add(
     modify_user: ModifyOwner,
     app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
+    if modify_user.users.is_empty() {
+        return Err(Error::MissingOwners).map_err(custom);
+    }
+
     let conn = app.pool.get().unwrap();
 
     let krate = Krate::by_name(&conn, &crate_id)
@@ -58,25 +63,17 @@ pub fn add(
 
     super::has_crate_permission(&conn, krate.id, owner.id)?;
 
-    // TODO: Make this one query
-    let ids = modify_user
-        .users
+    let ids = Owner::ids_by_logins(&conn, modify_user.users).map_err(custom)?;
+
+    let new_krate_owners = ids
         .iter()
-        .map(|u| {
-            let owner = Owner::by_login(&conn, &u).unwrap();
-            owner.id
-        })
-        .collect::<Vec<i32>>();
-
-    // TODO: Bulk insert
-    for id in ids {
-        let krate_owner = NewKrateOwner {
+        .map(|id| NewKrateOwner {
             krate_id: krate.id,
-            owner_id: id,
-        };
+            owner_id: *id,
+        })
+        .collect::<Vec<_>>();
 
-        krate_owner.save(&conn).map_err(custom)?;
-    }
+    NewKrateOwner::save_many(&conn, new_krate_owners).map_err(custom)?;
 
     Ok(warp::reply::json(&super::OK::new()))
 }
@@ -87,6 +84,10 @@ pub fn remove(
     modify_user: ModifyOwner,
     app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
+    if modify_user.users.is_empty() {
+        return Err(Error::MissingOwners).map_err(custom);
+    }
+
     let conn = app.pool.get().unwrap();
 
     let krate = Krate::by_name(&conn, &crate_id)
@@ -95,19 +96,9 @@ pub fn remove(
 
     super::has_crate_permission(&conn, krate.id, owner.id)?;
 
-    // TODO: Make this one query
-    let ids = modify_user
-        .users
-        .iter()
-        .map(|u| {
-            let owner = Owner::by_login(&conn, &u).unwrap();
-            owner.id
-        })
-        .collect::<Vec<i32>>();
+    let ids = Owner::ids_by_logins(&conn, modify_user.users).map_err(custom)?;
 
-    // TODO: Bulk delete
-    for id in ids {
-        KrateOwner::remove_owner(&conn, krate.id, id).map_err(custom)?;
-    }
+    KrateOwner::remove_owners(&conn, krate.id, ids).map_err(custom)?;
+
     Ok(warp::reply::json(&super::OK::new()))
 }
