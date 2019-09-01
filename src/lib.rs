@@ -21,7 +21,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use crate::error::Error;
 use crate::metadata::Metadata;
 use crate::repository::Repository;
-use crate::storage::{Local, Storage};
+use crate::storage::Storage;
 
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool};
@@ -39,7 +39,7 @@ impl Application {
     pub fn new(server: &Server) -> Result<Self, Error> {
         let pool = make_pool(&server.db_url)?;
 
-        let storage = Storage::Local(Local::new(server.local_base_path.as_path()));
+        let storage = Storage::new(&server);
 
         let index = Arc::new(Mutex::new(Repository::open(&server.index_location)?));
 

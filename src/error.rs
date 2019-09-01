@@ -10,6 +10,8 @@ pub enum Error {
     InvalidRef(String),
     Unauthorized,
     MissingOwners,
+    #[cfg(feature = "s3")]
+    UploadS3(rusoto_core::RusotoError<rusoto_s3::PutObjectError>),
 }
 
 impl fmt::Display for Error {
@@ -23,6 +25,8 @@ impl fmt::Display for Error {
             Error::InvalidRef(ref status) => write!(f, "failed to push a ref: {}", status),
             Error::Unauthorized => write!(f, "Unauthorized"),
             Error::MissingOwners => write!(f, "No owners provided"),
+            #[cfg(feature = "s3")]
+            Error::UploadS3(ref err) => err.fmt(f),
         }
     }
 }

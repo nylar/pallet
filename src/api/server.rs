@@ -10,13 +10,6 @@ use warp::{path, Filter};
 pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Application>) {
     let max_upload_size = application.max_upload_size;
 
-    let files_path = application.storage.local_base_path();
-
-    // Only enabled when the storage type is Local
-    let local_files = serve_static(files_path.is_some())
-        .and(warp::path("crates"))
-        .and(warp::fs::dir(files_path.unwrap()));
-
     let app = application.clone();
     let app = warp::any().map(move || app.clone());
 
@@ -112,22 +105,11 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
         .or(owners_remove)
         .or(search)
         .or(me)
-        .or(local_files)
         .recover(middleware::error_handler);
 
+    #[cfg(feature = "local")]
+    warp::serve(api.or(warp::path("local").and(warp::fs::dir(application.storage.base_path()))))
+        .run(addr);
+    #[cfg(not(feature = "local"))]
     warp::serve(api).run(addr);
-}
-
-fn serve_static(
-    is_local_storage: bool,
-) -> impl warp::Filter<Extract = (), Error = warp::Rejection> + Copy {
-    warp::any()
-        .and_then(move || {
-            if is_local_storage {
-                Ok(())
-            } else {
-                Err(warp::reject::not_found())
-            }
-        })
-        .untuple_one()
 }

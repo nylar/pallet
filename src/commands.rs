@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use crate::error::Error;
 
 use structopt::StructOpt;
@@ -112,9 +110,12 @@ pub struct Server {
     /// URL of database.
     #[structopt(long = "db-url", env = "DB_URL")]
     pub db_url: String,
-    /// Local storage settings.
-    #[structopt(long = "local-base-path", env = "LOCAL_BASE_PATH")]
-    pub local_base_path: PathBuf,
+    #[cfg(feature = "local")]
+    #[structopt(flatten)]
+    pub local_opts: LocalOpts,
+    #[cfg(feature = "s3")]
+    #[structopt(flatten)]
+    pub s3_opts: S3Opts,
     /// Index location.
     #[structopt(long = "index-location", env = "INDEX_LOCATION")]
     pub index_location: String,
@@ -122,7 +123,7 @@ pub struct Server {
     #[structopt(
         long = "max-upload-size",
         env = "MAX_UPLOAD_SIZE",
-        default_value = "10_485_760"
+        default_value = "10485760"
     )]
     pub max_upload_size: u64,
 }
@@ -142,4 +143,29 @@ impl Command for Server {
 
         Ok(())
     }
+}
+
+#[cfg(feature = "local")]
+#[derive(StructOpt)]
+pub struct LocalOpts {
+    /// Path to where the crates are stored
+    #[structopt(long = "local-base-path", env = "LOCAL_BASE_PATH")]
+    pub local_base_path: std::path::PathBuf,
+}
+
+#[cfg(feature = "s3")]
+#[derive(StructOpt)]
+pub struct S3Opts {
+    /// S3 region
+    #[structopt(long = "s3-region", env = "S3_REGION")]
+    pub s3_region: rusoto_core::Region,
+    /// S3 bucket
+    #[structopt(long = "s3-bucket", env = "S3_BUCKET")]
+    pub s3_bucket: String,
+    /// S3 access key
+    #[structopt(long = "s3-access-key", env = "S3_ACCESS_KEY")]
+    pub s3_access_key: String,
+    /// S3 secret key
+    #[structopt(long = "s3-secret-key", env = "S3_SECRET_KEY")]
+    pub s3_secret_key: String,
 }
