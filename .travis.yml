@@ -7,12 +7,12 @@ matrix:
 
   - rust: stable
     script:
-    - cargo build --feature s3
-    - cargo build --feature local
+    - cargo build --features s3
+    - cargo build --features local
     - cargo test
     - rustup component add clippy
-    - cargo clippy --feature s3
-    - cargo clippy --feature local
+    - cargo clippy --features s3
+    - cargo clippy --features local
     - rustup component add rustfmt
     - cargo fmt --all -- --check
     env: RUST_BACKTRACE=1
