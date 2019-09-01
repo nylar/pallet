@@ -9,7 +9,8 @@ matrix:
     script:
     - cargo build --features s3
     - cargo build --features local
-    - cargo test
+    - cargo test --features s3
+    - cargo test --features local
     - rustup component add clippy
     - cargo clippy --features s3
     - cargo clippy --features local
