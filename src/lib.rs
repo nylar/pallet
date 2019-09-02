@@ -5,6 +5,7 @@ extern crate log;
 
 mod api;
 mod commands;
+mod config;
 mod error;
 mod git_auth;
 mod metadata;
@@ -16,10 +17,12 @@ mod utils;
 
 pub use commands::{Commands, Server};
 
+use std::fs::File;
 use std::sync::{Arc, Mutex, MutexGuard};
 
+use crate::config::Config;
 use crate::error::Error;
-use crate::metadata::Metadata;
+use crate::metadata::{Dependency, Metadata};
 use crate::repository::Repository;
 use crate::storage::Storage;
 
@@ -33,6 +36,7 @@ pub struct Application {
     pub storage: Storage,
     index: Arc<Mutex<Repository>>,
     pub max_upload_size: u64,
+    config: Config,
 }
 
 impl Application {
@@ -41,13 +45,26 @@ impl Application {
 
         let storage = Storage::new(&server);
 
-        let index = Arc::new(Mutex::new(Repository::open(&server.index_location)?));
+        let checkout_path = match server.checkout_path {
+            Some(ref checkout_path) => checkout_path.to_owned(),
+            None => tempfile::TempDir::new()?.into_path(),
+        };
+
+        let index = Arc::new(Mutex::new(Repository::open(
+            &server.index_location,
+            &checkout_path,
+        )?));
+
+        let config_file = File::open(checkout_path.join("config.json"))?;
+
+        let config = Config::open(config_file, &server.index_location)?;
 
         Ok(Application {
             pool,
             storage,
             index,
             max_upload_size: server.max_upload_size,
+            config,
         })
     }
 
@@ -55,6 +72,20 @@ impl Application {
         let repo = self.index.lock().unwrap();
         repo.reset_head()?;
         Ok(repo)
+    }
+
+    pub fn dependency_registry_allowed(&self, dependencies: &[Dependency]) -> Result<(), Error> {
+        for dependency in dependencies {
+            if let Some(ref registry) = dependency.registry {
+                if !self.config.registry_allowed(&registry) {
+                    return Err(Error::DisallowedRegistry(
+                        dependency.name.to_owned(),
+                        registry.to_owned(),
+                    ));
+                }
+            }
+        }
+        Ok(())
     }
 }
 

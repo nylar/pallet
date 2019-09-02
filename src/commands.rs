@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::error::Error;
 
 use structopt::StructOpt;
@@ -116,9 +118,12 @@ pub struct Server {
     #[cfg(feature = "s3")]
     #[structopt(flatten)]
     pub s3_opts: S3Opts,
-    /// Index location.
+    /// Index location, e.g. git@github.com:nylar/private-registry.git
     #[structopt(long = "index-location", env = "INDEX_LOCATION")]
     pub index_location: String,
+    /// Checkout path
+    #[structopt(long = "checkout-path", env = "CHECKOUT_PATH")]
+    pub checkout_path: Option<PathBuf>,
     /// Max upload size in bytes.
     #[structopt(
         long = "max-upload-size",
@@ -150,7 +155,7 @@ impl Command for Server {
 pub struct LocalOpts {
     /// Path to where the crates are stored
     #[structopt(long = "local-base-path", env = "LOCAL_BASE_PATH")]
-    pub local_base_path: std::path::PathBuf,
+    pub local_base_path: PathBuf,
 }
 
 #[cfg(feature = "s3")]

@@ -12,6 +12,7 @@ pub enum Error {
     MissingOwners,
     #[cfg(feature = "s3")]
     UploadS3(rusoto_core::RusotoError<rusoto_s3::PutObjectError>),
+    DisallowedRegistry(String, String),
 }
 
 impl fmt::Display for Error {
@@ -27,6 +28,9 @@ impl fmt::Display for Error {
             Error::MissingOwners => write!(f, "No owners provided"),
             #[cfg(feature = "s3")]
             Error::UploadS3(ref err) => err.fmt(f),
+            Error::DisallowedRegistry(ref krate, ref registry) => {
+                write!(f, "Crate {}'s registry {} is not allowed", krate, registry)
+            }
         }
     }
 }

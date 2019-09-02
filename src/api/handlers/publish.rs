@@ -103,6 +103,9 @@ pub fn publish(
         })
         .collect::<Vec<_>>();
 
+    // Check each dependency isn't used a registry that isn't allowed
+    app.dependency_registry_allowed(&deps).map_err(custom)?;
+
     let metadata = Metadata {
         name: crate_upload.name,
         vers: crate_upload.vers,
