@@ -4,6 +4,7 @@ use std::sync::Arc;
 use super::{handlers, middleware};
 use crate::Application;
 
+use futures::sync::oneshot;
 use semver::Version;
 use warp::{path, Filter};
 
@@ -107,9 +108,37 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
         .or(me)
         .recover(middleware::error_handler);
 
+    let (tx, rx) = oneshot::channel();
+
+    set_handler(move || {
+        info!("Signal received, shutting down");
+        tx.send(()).unwrap();
+    })
+    .unwrap();
+
     #[cfg(feature = "local")]
-    warp::serve(api.or(warp::path("local").and(warp::fs::dir(application.storage.base_path()))))
-        .run(addr);
+    let (_addr, server) = warp::serve(
+        api.or(warp::path("local").and(warp::fs::dir(application.storage.base_path()))),
+    )
+    .bind_with_graceful_shutdown(addr, rx);
     #[cfg(not(feature = "local"))]
-    warp::serve(api).run(addr);
+    let (_addr, server) = warp::serve(api).bind_with_graceful_shutdown(addr, rx);
+
+    tokio::run(futures::future::lazy(move || {
+        warp::spawn(server);
+        Ok(())
+    }));
+}
+
+fn set_handler<F>(f: F) -> Result<(), ctrlc::Error>
+where
+    F: FnOnce() -> () + Send + 'static,
+{
+    let f = std::sync::Mutex::new(Some(f));
+    ctrlc::set_handler(move || {
+        if let Ok(mut guard) = f.lock() {
+            let f = guard.take().unwrap();
+            f();
+        }
+    })
 }

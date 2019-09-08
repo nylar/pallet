@@ -8,7 +8,9 @@ publish = false
 [dependencies]
 bytes = "0.4"
 chrono = "0.4"
+ctrlc = { version = "3", features = ["termination"] }
 diesel = { version = "1.0.0", features = ["postgres", "r2d2", "chrono"] }
+futures = "0.1"
 git2 = "0.10"
 log = "0.4"
 pretty_env_logger = "0.3"
@@ -22,6 +24,7 @@ semver = { version = "0.9", features = ["serde"] }
 sha2 = "0.8"
 structopt = "0.2"
 tempfile = "3"
+tokio = "0.1"
 uuid = { version = "0.7", features = ["v4"] }
 warp = "0.1"
 
