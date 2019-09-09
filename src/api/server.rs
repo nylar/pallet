@@ -38,10 +38,10 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
 
     // Publish `PUT /api/v1/crates/new`
     let crates_new = warp::put2()
+        .and(publish_endpoint)
         .and(middleware::auth(application.clone()))
         .and(warp::body::content_length_limit(max_upload_size))
         .and(warp::body::concat())
-        .and(publish_endpoint)
         .and(app.clone())
         .and_then(handlers::publish::publish);
 
@@ -72,7 +72,7 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
         .and(app.clone())
         .and_then(handlers::owners::list);
 
-    // Owners Add `PUT /api/v1/crates/{crate_name}/owners`
+    // Owners Add `PUT /api/v1/crates/:crate_id/owners`
     let owners_add = warp::put2()
         .and(middleware::auth(application.clone()))
         .and(owners_endpoint)
@@ -80,7 +80,7 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
         .and(app.clone())
         .and_then(handlers::owners::add);
 
-    // Owners Remove `DELETE /api/v1/crates/{crate_name}/owners`
+    // Owners Remove `DELETE /api/v1/crates/:crate_id/owners`
     let owners_remove = warp::delete2()
         .and(middleware::auth(application.clone()))
         .and(owners_endpoint)

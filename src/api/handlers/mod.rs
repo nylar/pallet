@@ -34,3 +34,18 @@ pub(crate) fn has_crate_permission(
         Err(custom(Error::Unauthorized))
     }
 }
+
+#[derive(Debug, Serialize)]
+pub struct OkMessage {
+    ok: bool,
+    msg: String,
+}
+
+impl OkMessage {
+    pub fn new(msg: String) -> Self {
+        Self {
+            ok: true,
+            msg: msg.to_owned(),
+        }
+    }
+}

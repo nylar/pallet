@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use crate::error::Error;
@@ -63,7 +64,7 @@ pub fn add(
 
     super::has_crate_permission(&conn, krate.id, owner.id)?;
 
-    let ids = Owner::ids_by_logins(&conn, modify_user.users).map_err(custom)?;
+    let ids = Owner::ids_by_logins(&conn, &modify_user.users).map_err(custom)?;
 
     let new_krate_owners = ids
         .iter()
@@ -75,7 +76,9 @@ pub fn add(
 
     NewKrateOwner::save_many(&conn, new_krate_owners).map_err(custom)?;
 
-    Ok(warp::reply::json(&super::OK::new()))
+    let msg = format!("Added [{}] as owners", &modify_user.users.join(", "));
+
+    Ok(warp::reply::json(&super::OkMessage::new(msg)))
 }
 
 pub fn remove(
@@ -96,9 +99,23 @@ pub fn remove(
 
     super::has_crate_permission(&conn, krate.id, owner.id)?;
 
-    let ids = Owner::ids_by_logins(&conn, modify_user.users).map_err(custom)?;
+    let all_owners = krate
+        .owners(&conn)
+        .map_err(custom)?
+        .iter()
+        .map(|o| o.id)
+        .collect::<HashSet<_>>();
+
+    let ids = Owner::ids_by_logins(&conn, &modify_user.users).map_err(custom)?;
+
+    // Don't allow all owners to be removed from a krate.
+    if all_owners == ids.iter().map(|o| *o).collect::<HashSet<_>>() {
+        return Err(Error::UnableToOrphanCrate).map_err(custom);
+    }
 
     KrateOwner::remove_owners(&conn, krate.id, ids).map_err(custom)?;
 
-    Ok(warp::reply::json(&super::OK::new()))
+    let msg = format!("Removed [{}] as owners", &modify_user.users.join(", "));
+
+    Ok(warp::reply::json(&super::OkMessage::new(msg)))
 }

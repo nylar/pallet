@@ -13,6 +13,7 @@ pub enum Error {
     #[cfg(feature = "s3")]
     UploadS3(rusoto_core::RusotoError<rusoto_s3::PutObjectError>),
     DisallowedRegistry(String, String),
+    UnableToOrphanCrate,
 }
 
 impl fmt::Display for Error {
@@ -31,6 +32,7 @@ impl fmt::Display for Error {
             Error::DisallowedRegistry(ref krate, ref registry) => {
                 write!(f, "Crate {}'s registry {} is not allowed", krate, registry)
             }
+            Error::UnableToOrphanCrate => write!(f, "Can't make a crate an orphan"),
         }
     }
 }

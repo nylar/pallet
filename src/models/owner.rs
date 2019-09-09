@@ -30,7 +30,7 @@ impl Owner {
             .map_err(Error::DB)
     }
 
-    pub fn ids_by_logins(conn: &PgConnection, logins: Vec<String>) -> Result<Vec<i32>, Error> {
+    pub fn ids_by_logins(conn: &PgConnection, logins: &[String]) -> Result<Vec<i32>, Error> {
         owner::table
             .select(owner::id)
             .filter(owner::login.eq(any(logins)))
