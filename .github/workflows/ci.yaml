@@ -1,0 +1,21 @@
+name: Rust
+
+on: push
+
+jobs:
+  build-s3:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build
+      run: cargo build --features s3
+    - name: Run tests
+      run: cargo test --features s3
+  build-local:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build
+      run: cargo build --features local
+    - name: Run tests
+      run: cargo test --features local
