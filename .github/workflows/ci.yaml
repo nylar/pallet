@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - name: Install deps
+      run: apt-get update && apt-get install -y --no-cache libpq-dev libssl-dev
     - name: Build
       run: cargo build --features s3
     - name: Run tests
@@ -15,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - name: Install deps
+      run: apt-get update && apt-get install -y --no-cache libpq-dev libssl-dev
     - name: Build
       run: cargo build --features local
     - name: Run tests
