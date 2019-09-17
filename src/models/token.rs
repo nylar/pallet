@@ -44,6 +44,17 @@ impl Token {
             Err(err) => Err(Error::DB(err)),
         }
     }
+
+    pub fn delete(conn: &PgConnection, name: &str, owner_id: i32) -> Result<(), Error> {
+        diesel::delete(
+            token::table
+                .filter(token::name.eq(name))
+                .filter(token::owner_id.eq(owner_id)),
+        )
+        .execute(conn)?;
+
+        Ok(())
+    }
 }
 
 #[derive(Insertable)]

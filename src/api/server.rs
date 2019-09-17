@@ -103,13 +103,21 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
     // Me `GET /me`
     let me = warp::get2().and(me_endpoint).map(handlers::me::me);
 
-    // Token `PUT /api/v1/token/new`
+    // Token `PUT /api/v1/token`
     let token_add = warp::put2()
         .and(middleware::auth(application.clone()))
         .and(token_endpoint)
         .and(warp::body::json())
         .and(app.clone())
         .and_then(handlers::token::add);
+
+    // Token `DELETE` /api/v1/token`
+    let token_remove = warp::delete2()
+        .and(middleware::auth(application.clone()))
+        .and(token_endpoint)
+        .and(warp::body::json())
+        .and(app.clone())
+        .and_then(handlers::token::remove);
 
     // Owner New `PUT /api/v1/owners/new`
     let new_owner = warp::put2()
@@ -128,6 +136,7 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
         .or(search)
         .or(me)
         .or(token_add)
+        .or(token_remove)
         .or(new_owner)
         .recover(middleware::error_handler);
 
