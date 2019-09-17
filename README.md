@@ -4,7 +4,7 @@
 
 # Pallet
 
-[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fnylar%2Fpallet%2Fbadge&style=flat)](https://actions-badge.atrox.dev/nylar/pallet/goto)
+[![Build Status](https://github.com/nylar/pallet/workflows/CI/badge.svg)](https://github.com/nylar/pallet/actions)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)](https://github.com/nylar/pallet#license)
 
 A private registry and API for Rust.
