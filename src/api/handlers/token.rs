@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::models::{owner::Owner, token::NewToken};
+use crate::models::{
+    owner::Owner,
+    token::{NewToken, Token},
+};
 use crate::Application;
 
 use serde::{Deserialize, Serialize};
@@ -42,4 +45,16 @@ pub fn add(
         }),
         warp::http::StatusCode::CREATED,
     ))
+}
+
+pub fn remove(
+    owner: Owner,
+    form: TokenForm,
+    app: Arc<Application>,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    let conn = app.pool.get().unwrap();
+
+    Token::delete(&conn, &form.name, owner.id).map_err(custom)?;
+
+    Ok(warp::reply::json(&super::OK::new()))
 }
