@@ -10,11 +10,6 @@ trait Command {
 
 #[derive(StructOpt)]
 pub enum Commands {
-    /// Creates a new owner
-    #[structopt(name = "create_owner")]
-    CreateOwner(CreateOwner),
-    #[structopt(name = "create_token")]
-    CreateToken(CreateToken),
     /// Serves the HTTP API
     #[structopt(name = "server")]
     Server(Server),
@@ -23,84 +18,8 @@ pub enum Commands {
 impl Commands {
     pub fn run(&self) -> Result<(), Error> {
         match *self {
-            Commands::CreateOwner(ref cmd) => cmd.run(),
-            Commands::CreateToken(ref cmd) => cmd.run(),
             Commands::Server(ref cmd) => cmd.run(),
         }
-    }
-}
-
-#[derive(StructOpt)]
-pub struct CreateOwner {
-    /// A unique identifier (e.g. email) for an owner
-    #[structopt(short = "l")]
-    pub login: String,
-    /// An optional name to associate with the owner
-    #[structopt(short = "n")]
-    pub name: Option<String>,
-    /// URL of database.
-    #[structopt(short = "d", env = "DB_URL")]
-    pub db_url: String,
-}
-
-impl Command for CreateOwner {
-    fn run(&self) -> Result<(), Error> {
-        use crate::models::owner::NewOwner;
-
-        let pool = crate::make_pool(&self.db_url)?;
-
-        let conn = pool.get()?;
-
-        let new_owner = NewOwner {
-            login: &self.login,
-            name: self.name.as_ref().map(|x| &**x),
-        };
-
-        let owner = new_owner.save(&conn)?;
-
-        println!("Created owner: {}", owner);
-
-        Ok(())
-    }
-}
-
-#[derive(StructOpt)]
-pub struct CreateToken {
-    /// The login of a registered owner
-    #[structopt(short = "l")]
-    pub login: String,
-    /// A name to associate with the token
-    #[structopt(short = "n")]
-    pub name: String,
-    /// URL of database.
-    #[structopt(short = "d", env = "DB_URL")]
-    pub db_url: String,
-}
-
-impl Command for CreateToken {
-    fn run(&self) -> Result<(), Error> {
-        use crate::models::{owner::Owner, token::NewToken};
-
-        let pool = crate::make_pool(&self.db_url)?;
-
-        let conn = pool.get()?;
-
-        let owner = Owner::by_login(&conn, &self.login)?;
-
-        let token = crate::utils::generate_token();
-
-        let new_token = NewToken {
-            owner_id: owner.id,
-            name: &self.name,
-            api_token: &token,
-            created_at: chrono::Utc::now().naive_utc(),
-        };
-
-        let api_token = new_token.save(&conn)?;
-
-        println!("Created API token: {} ({})", token, api_token.name);
-
-        Ok(())
     }
 }
 

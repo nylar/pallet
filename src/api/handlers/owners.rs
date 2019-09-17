@@ -5,7 +5,7 @@ use crate::error::Error;
 use crate::models::{
     krate::Krate,
     krateowner::{KrateOwner, NewKrateOwner},
-    owner::Owner,
+    owner::{NewOwner, Owner},
 };
 use crate::Application;
 
@@ -118,4 +118,26 @@ pub fn remove(
     let msg = format!("Removed [{}] as owners", &modify_user.users.join(", "));
 
     Ok(warp::reply::json(&super::OkMessage::new(msg)))
+}
+
+#[derive(Deserialize)]
+pub struct OwnerForm {
+    login: String,
+    name: Option<String>,
+}
+
+pub fn new(form: OwnerForm, app: Arc<Application>) -> Result<impl warp::Reply, warp::Rejection> {
+    let conn = app.pool.get().unwrap();
+
+    let new_owner = NewOwner {
+        login: &form.login,
+        name: form.name.as_ref().map(|x| &**x),
+    };
+
+    new_owner.save(&conn).map_err(custom)?;
+
+    Ok(warp::reply::with_status(
+        warp::reply::json(&super::OK::new()),
+        warp::http::StatusCode::CREATED,
+    ))
 }
