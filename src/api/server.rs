@@ -36,6 +36,12 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
 
     let modify_owners = warp::body::json();
 
+    let token_endpoint = api_endpoint.and(path!("token"));
+
+    let new_owner_endpoint = api_endpoint
+        .and(path!("owners" / "new"))
+        .and(warp::path::end());
+
     // Publish `PUT /api/v1/crates/new`
     let crates_new = warp::put2()
         .and(publish_endpoint)
@@ -97,6 +103,21 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
     // Me `GET /me`
     let me = warp::get2().and(me_endpoint).map(handlers::me::me);
 
+    // Token `PUT /api/v1/token/new`
+    let token_add = warp::put2()
+        .and(middleware::auth(application.clone()))
+        .and(token_endpoint)
+        .and(warp::body::json())
+        .and(app.clone())
+        .and_then(handlers::token::add);
+
+    // Owner New `PUT /api/v1/owners/new`
+    let new_owner = warp::put2()
+        .and(new_owner_endpoint)
+        .and(warp::body::json())
+        .and(app.clone())
+        .and_then(handlers::owners::new);
+
     let api = crates_new
         .or(crates_download)
         .or(crates_yank)
@@ -106,6 +127,8 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
         .or(owners_remove)
         .or(search)
         .or(me)
+        .or(token_add)
+        .or(new_owner)
         .recover(middleware::error_handler);
 
     let (tx, rx) = oneshot::channel();

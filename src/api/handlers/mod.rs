@@ -3,6 +3,7 @@ pub mod me;
 pub mod owners;
 pub mod publish;
 pub mod search;
+pub mod token;
 pub mod yank;
 
 use crate::error::Error;
