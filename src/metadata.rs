@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 
+use crate::types::CrateName;
+
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Metadata {
-    pub name: String,
+    pub name: CrateName,
     pub vers: Version,
     pub deps: Vec<Dependency>,
     pub cksum: String,

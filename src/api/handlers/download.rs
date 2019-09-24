@@ -1,6 +1,7 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
+use crate::types::CrateName;
 use crate::Application;
 
 use semver::Version;
@@ -8,7 +9,7 @@ use warp::http::Uri;
 use warp::reject::custom;
 
 pub fn download(
-    crate_id: String,
+    crate_id: CrateName,
     version: Version,
     app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {

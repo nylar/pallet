@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use super::{handlers, middleware};
+use crate::types::CrateName;
 use crate::Application;
 
 use futures::sync::oneshot;
@@ -22,7 +23,7 @@ pub fn server(addr: impl Into<SocketAddr> + 'static, application: Arc<Applicatio
 
     let publish_endpoint = crates_endpoint.and(path!("new")).and(warp::path::end());
 
-    let crate_id = crates_endpoint.and(warp::path::param::<String>());
+    let crate_id = crates_endpoint.and(warp::path::param::<CrateName>());
     let crate_version = crate_id.and(warp::path::param::<Version>());
 
     let download_endpoint = crate_version.and(path!("download")).and(warp::path::end());

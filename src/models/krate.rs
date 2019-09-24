@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::models::owner::Owner;
 use crate::schema::krate;
+use crate::types::CrateName;
 
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
@@ -9,7 +10,7 @@ use diesel::prelude::*;
 #[table_name = "krate"]
 pub struct Krate {
     pub id: i32,
-    pub name: String,
+    pub name: CrateName,
     pub description: Option<String>,
 }
 

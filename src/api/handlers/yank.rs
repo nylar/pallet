@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::models::{krate, owner::Owner, version};
+use crate::types::CrateName;
 use crate::Application;
 
 use semver::Version;
@@ -8,7 +9,7 @@ use warp::reject::{custom, not_found};
 
 pub fn yank(
     owner: Owner,
-    crate_id: String,
+    crate_id: CrateName,
     version: Version,
     app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
@@ -17,7 +18,7 @@ pub fn yank(
 
 pub fn unyank(
     owner: Owner,
-    crate_id: String,
+    crate_id: CrateName,
     version: Version,
     app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
@@ -26,7 +27,7 @@ pub fn unyank(
 
 fn do_yank(
     owner: &Owner,
-    crate_id: &str,
+    crate_id: &CrateName,
     vers: &Version,
     app: &Application,
     yanked: bool,

@@ -13,6 +13,7 @@ mod models;
 mod repository;
 mod schema;
 mod storage;
+mod types;
 mod utils;
 
 pub use commands::{Commands, Server};
@@ -25,6 +26,7 @@ use crate::error::Error;
 use crate::metadata::{Dependency, Metadata};
 use crate::repository::Repository;
 use crate::storage::Storage;
+use crate::types::CrateName;
 
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool};
@@ -100,7 +102,7 @@ pub fn add_crate(app: &Application, metadata: &Metadata) -> Result<(), Error> {
 
     let repo = app.lock_index()?;
 
-    let dst = repo.index_file(&metadata.name);
+    let dst = repo.index_file(&*metadata.name);
     fs::create_dir_all(dst.parent().unwrap())?;
 
     let mut file = OpenOptions::new().append(true).create(true).open(&dst)?;
@@ -117,7 +119,7 @@ pub fn add_crate(app: &Application, metadata: &Metadata) -> Result<(), Error> {
 
 pub fn yank_crate(
     app: &Application,
-    name: &str,
+    name: &CrateName,
     version: &Version,
     yanked: bool,
 ) -> Result<(), Error> {
@@ -132,7 +134,7 @@ pub fn yank_crate(
         .lines()
         .map(|line| {
             let mut git_crate = serde_json::from_str::<Metadata>(line)?;
-            if git_crate.name != name || git_crate.vers != *version {
+            if &git_crate.name != name || git_crate.vers != *version {
                 return Ok(line.to_string());
             }
             git_crate.yanked = yanked;

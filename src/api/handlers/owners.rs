@@ -7,6 +7,7 @@ use crate::models::{
     krateowner::{KrateOwner, NewKrateOwner},
     owner::{NewOwner, Owner},
 };
+use crate::types::CrateName;
 use crate::Application;
 
 use serde::{Deserialize, Serialize};
@@ -30,7 +31,7 @@ pub struct ModifyOwner {
 
 pub fn list(
     owner: Owner,
-    crate_id: String,
+    crate_id: CrateName,
     app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let conn = app.pool.get().unwrap();
@@ -48,7 +49,7 @@ pub fn list(
 
 pub fn add(
     owner: Owner,
-    crate_id: String,
+    crate_id: CrateName,
     modify_user: ModifyOwner,
     app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
@@ -83,7 +84,7 @@ pub fn add(
 
 pub fn remove(
     owner: Owner,
-    crate_id: String,
+    crate_id: CrateName,
     modify_user: ModifyOwner,
     app: Arc<Application>,
 ) -> Result<impl warp::Reply, warp::Rejection> {

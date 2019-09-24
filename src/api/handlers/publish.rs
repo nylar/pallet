@@ -8,6 +8,7 @@ use crate::models::{
     owner::Owner,
     version::NewVersion,
 };
+use crate::types::CrateName;
 use crate::Application;
 
 use bytes::Buf;
@@ -17,7 +18,7 @@ use warp::reject::custom;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CrateUpload {
-    name: String,
+    name: CrateName,
     vers: semver::Version,
     deps: Vec<CrateDependency>,
     features: HashMap<String, Vec<String>>,
