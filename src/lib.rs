@@ -2,6 +2,8 @@
 extern crate diesel;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate diesel_migrations;
 
 mod api;
 mod commands;
@@ -32,6 +34,8 @@ use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool};
 use semver::Version;
 
+embed_migrations!("migrations");
+
 #[derive(Clone)]
 pub struct Application {
     pub pool: Pool<ConnectionManager<PgConnection>>,
@@ -44,6 +48,10 @@ pub struct Application {
 impl Application {
     pub fn new(server: &Server) -> Result<Self, Error> {
         let pool = make_pool(&server.db_url)?;
+
+        let conn = pool.get().unwrap();
+
+        embedded_migrations::run(&conn).unwrap();
 
         let storage = Storage::new(&server);
 
